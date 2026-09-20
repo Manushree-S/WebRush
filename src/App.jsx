@@ -1,161 +1,212 @@
-import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
-import TaskForm from './components/TaskForm';
-import Statistics from './components/Statistics';
-import Filters from './components/Filters';
-import TaskList from './components/TaskList';
+// src/App.jsx
+import React, { useState, useMemo } from 'react';
+import { 
+  getReceipts, 
+  getDatasetMetadata, 
+  calculateDatasetMetrics 
+} from './data/normalizedData';
+import { buildConnectionNetwork } from './utils/connectionEngine';
+import { generateDatasetInsights } from './utils/insightsEngine';
+import { generateLifeChapters } from './utils/chaptersEngine';
+import { generateStoryScenes } from './utils/storyEngine';
 
-const STORAGE_KEY = 'focuslist_tasks';
+// Components
+import Header from './components/common/Header';
+import LifeOverview from './components/Overview/LifeOverview';
+import ReceiptExplorer from './components/Explorer/ReceiptExplorer';
+import ConnectionEngineView from './components/Connections/ConnectionEngineView';
+import InsightsView from './components/Insights/InsightsView';
+import ChaptersView from './components/Chapters/ChaptersView';
+import StoryMode from './components/Story/StoryMode';
+import LifeMapView from './components/LifeMap/LifeMapView';
+import ReceiptDetailModal from './components/ReceiptDetail/ReceiptDetailModal';
 
 export default function App() {
-  const [tasks, setTasks] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch (error) {
-      console.error('Error reading from localStorage:', error);
-    }
-    return [];
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [isStoryModeOpen, setIsStoryModeOpen] = useState(false);
+
+  // Explorer filter states passed from other views
+  const [explorerFilterState, setExplorerFilterState] = useState({
+    category: 'ALL',
+    location: 'ALL',
+    searchQuery: '',
+    receiptIds: null
   });
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
+  // 1. Raw Dataset & Metrics
+  const rawReceipts = useMemo(() => getReceipts(), []);
+  const metadata = useMemo(() => getDatasetMetadata(), []);
+  const metrics = useMemo(() => calculateDatasetMetrics(rawReceipts), [rawReceipts]);
 
-  // Save to localStorage whenever tasks change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-    }
-  }, [tasks]);
+  // 2. Connection Network (Graph, Adjacency, Connected Moments)
+  const connectionNetwork = useMemo(() => {
+    return buildConnectionNetwork(rawReceipts);
+  }, [rawReceipts]);
 
-  const generateId = () => {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    return `task_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  // 3. Algorithmic Insights
+  const insights = useMemo(() => {
+    return generateDatasetInsights(rawReceipts, connectionNetwork);
+  }, [rawReceipts, connectionNetwork]);
+
+  // 4. Narrative Life Chapters
+  const chapters = useMemo(() => {
+    return generateLifeChapters(rawReceipts, connectionNetwork);
+  }, [rawReceipts, connectionNetwork]);
+
+  // 5. Evidence-backed Story Scenes
+  const storyScenes = useMemo(() => {
+    return generateStoryScenes(rawReceipts, connectionNetwork, insights, chapters);
+  }, [rawReceipts, connectionNetwork, insights, chapters]);
+
+  // Cross-navigation Handlers
+  const handleNavigateToExplorer = () => {
+    setExplorerFilterState({ category: 'ALL', location: 'ALL', searchQuery: '', receiptIds: null });
+    setActiveTab('explorer');
   };
 
-  const handleAddTask = ({ title, priority }) => {
-    const newTask = {
-      id: generateId(),
-      title,
-      priority,
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTasks((prevTasks) => [newTask, ...prevTasks]);
+  const handleSelectCategory = (categoryKey) => {
+    setExplorerFilterState({ category: categoryKey, location: 'ALL', searchQuery: '', receiptIds: null });
+    setActiveTab('explorer');
   };
 
-  const handleToggleComplete = (taskId) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const handleExploreInsight = (insight) => {
+    setExplorerFilterState({
+      category: insight.categoryFocus || 'ALL',
+      location: insight.locationFilter || 'ALL',
+      searchQuery: '',
+      receiptIds: insight.receiptIds || null
+    });
+    setActiveTab('explorer');
   };
 
-  const handleUpdateTask = (taskId, { title, priority }) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              title,
-              priority,
-            }
-          : task
-      )
-    );
+  const handleExploreChapter = (chapter) => {
+    const ids = chapter.receipts?.map(r => r.id) || null;
+    setExplorerFilterState({
+      category: 'ALL',
+      location: 'ALL',
+      searchQuery: '',
+      receiptIds: ids
+    });
+    setActiveTab('explorer');
   };
-
-  const handleDeleteTask = (taskId) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-  };
-
-  const handleResetFilters = () => {
-    setSearchQuery('');
-    setStatusFilter('all');
-    setPriorityFilter('all');
-  };
-
-  // Statistics calculation
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.completed).length;
-  const pendingTasks = totalTasks - completedTasks;
-
-  // Multi-criteria filtering: search + status + priority simultaneously
-  const filteredTasks = tasks.filter((task) => {
-    const matchesSearch = task.title
-      .toLowerCase()
-      .includes(searchQuery.trim().toLowerCase());
-
-    const matchesStatus =
-      statusFilter === 'all' ||
-      (statusFilter === 'active' && !task.completed) ||
-      (statusFilter === 'completed' && task.completed);
-
-    const matchesPriority =
-      priorityFilter === 'all' ||
-      task.priority.toLowerCase() === priorityFilter.toLowerCase();
-
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
-
-  const hasActiveFilters =
-    searchQuery.trim() !== '' ||
-    statusFilter !== 'all' ||
-    priorityFilter !== 'all';
 
   return (
-    <div className="app-container">
-      <div className="app-wrapper">
-        <Header />
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
+      
+      {/* Top Application Header */}
+      <Header
+        activeTab={activeTab}
+        setActiveTab={(tab) => {
+          if (tab === 'story') {
+            setIsStoryModeOpen(true);
+          } else {
+            setActiveTab(tab);
+          }
+        }}
+        counts={{
+          totalReceipts: rawReceipts.length,
+          connectionsCount: connectionNetwork.connectedMoments?.length || 0,
+          insightsCount: insights.length,
+          chaptersCount: chapters.length,
+          locationsCount: metrics.locationsCount
+        }}
+        onStartStory={() => setIsStoryModeOpen(true)}
+      />
 
-        <main className="app-main" id="main-content">
-          <Statistics
-            total={totalTasks}
-            completed={completedTasks}
-            pending={pendingTasks}
+      {/* Main Page Container */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8">
+        {activeTab === 'overview' && (
+          <LifeOverview
+            metrics={metrics}
+            connectionNetwork={connectionNetwork}
+            metadata={metadata}
+            onNavigateToExplorer={handleNavigateToExplorer}
+            onStartStory={() => setIsStoryModeOpen(true)}
+            onSelectCategory={handleSelectCategory}
           />
+        )}
 
-          <TaskForm onAddTask={handleAddTask} />
-
-          <Filters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            priorityFilter={priorityFilter}
-            onPriorityChange={setPriorityFilter}
-            onResetFilters={handleResetFilters}
-            hasActiveFilters={hasActiveFilters}
+        {activeTab === 'explorer' && (
+          <ReceiptExplorer
+            receipts={rawReceipts}
+            adjacencyMap={connectionNetwork.adjacencyMap}
+            initialCategory={explorerFilterState.category}
+            initialLocation={explorerFilterState.location}
+            initialSearch={explorerFilterState.searchQuery}
+            initialReceiptIds={explorerFilterState.receiptIds}
+            onSelectReceipt={(receipt) => setSelectedReceipt(receipt)}
           />
+        )}
 
-          <TaskList
-            tasks={tasks}
-            filteredTasks={filteredTasks}
-            onToggleComplete={handleToggleComplete}
-            onUpdateTask={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
-            onResetFilters={handleResetFilters}
-            isFiltered={hasActiveFilters}
+        {activeTab === 'connections' && (
+          <ConnectionEngineView
+            connectionNetwork={connectionNetwork}
+            receipts={rawReceipts}
+            onSelectReceipt={(receipt) => setSelectedReceipt(receipt)}
           />
-        </main>
+        )}
 
-        <footer className="app-footer">
-          <p>
-            <strong>FocusList</strong> &bull; Crafted for high-focus productivity &bull; Frontend-only LocalStorage
-          </p>
-        </footer>
-      </div>
+        {activeTab === 'insights' && (
+          <InsightsView
+            insights={insights}
+            onExploreInsight={handleExploreInsight}
+          />
+        )}
+
+        {activeTab === 'chapters' && (
+          <ChaptersView
+            chapters={chapters}
+            onExploreChapter={handleExploreChapter}
+            onSelectReceipt={(receipt) => setSelectedReceipt(receipt)}
+          />
+        )}
+
+        {activeTab === 'map' && (
+          <LifeMapView
+            receipts={rawReceipts}
+            connectionNetwork={connectionNetwork}
+            onSelectReceipt={(receipt) => setSelectedReceipt(receipt)}
+          />
+        )}
+      </main>
+
+      {/* Fullscreen Guided Story Mode */}
+      {isStoryModeOpen && (
+        <StoryMode
+          scenes={storyScenes}
+          onClose={() => setIsStoryModeOpen(false)}
+          onSelectReceipt={(receipt) => setSelectedReceipt(receipt)}
+        />
+      )}
+
+      {/* Deep-dive Receipt Detail Modal */}
+      {selectedReceipt && (
+        <ReceiptDetailModal
+          receipt={selectedReceipt}
+          allReceipts={rawReceipts}
+          adjacencyMap={connectionNetwork.adjacencyMap}
+          onClose={() => setSelectedReceipt(null)}
+          onSelectReceipt={(receipt) => setSelectedReceipt(receipt)}
+        />
+      )}
+
+      {/* Footer */}
+      <footer className="border-t border-[#232D42] bg-[#090D16] py-8 text-xs font-mono text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            LIFE//RECEIPTS · "Your digital life, decoded."
+          </div>
+          <div className="flex items-center gap-4 text-slate-400">
+            <span>Kaggle Dataset Normalization</span>
+            <span>·</span>
+            <span>100% Client-Side React + Vite</span>
+            <span>·</span>
+            <span>Vercel Ready</span>
+          </div>
+        </div>
+      </footer>
+
     </div>
   );
 }
