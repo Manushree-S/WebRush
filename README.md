@@ -1,143 +1,267 @@
-# FocusList ⚡
+# FocusList  ⚡
 
-> **Organize effortlessly. Focus deeply. Achieve more.**
+> Organize effortlessly. Focus deeply. Achieve more.
 
-FocusList is a modern, lightweight, accessible, frontend-only productivity application built to help individuals and teams organize daily tasks and focus on what matters most. Built with React and Vite, it delivers instant responsiveness, real-time search, multi-filter capabilities, task metrics, and complete offline persistence via browser LocalStorage.
+FocusList is a modern, responsive task management application built with React and Vite. It helps users organize daily tasks, set priorities, track completion progress, and manage tasks through a simple and intuitive interface.
 
----
+The application is frontend-only and uses browser LocalStorage to persist task data.
 
-## 🚀 Features
+## Live Demo
 
-- **Intuitive Task Creation**: Add tasks quickly with title and priority levels (**High**, **Medium**, **Low**). Empty or whitespace-only titles are automatically validated and rejected with accessible alerts.
-- **Task Management**:
-  - Toggle completion status with instant visual feedback (strike-through and muted appearance).
-  - Inline editing of title and priority preserving task history and identifiers without duplication.
-  - Delete tasks cleanly with instant statistics updates.
-- **Visual Priority Badges**: Priority is communicated clearly through distinct labels, symbols (`▲ High`, `■ Medium`, `▼ Low`), and color schemes ensuring full WCAG accessibility (does not rely on color alone).
-- **Real-Time Instant Search**: Filter task titles on the fly as you type with a one-click search clearing mechanism.
-- **Status Filters**: Switch between **All**, **Active**, and **Completed** tasks.
-- **Priority Filters**: Filter specifically by **All Priorities**, **High**, **Medium**, or **Low**.
-- **Simultaneous Multi-Filtering**: Search, status filter, and priority filter evaluate synchronously in real-time.
-- **Live Statistics Cards**:
-  - **Total Tasks**
-  - **Pending Tasks** (`Pending = Total - Completed`)
-  - **Completed Tasks**
-  - Interactive progress indicator reflecting overall completion percentage.
-- **Persistent LocalStorage**: Automatically synchronizes all task changes under the key `focuslist_tasks`. Refreshing or reopening the browser never loses your data.
-- **Accessible & Responsive**:
-  - Semantic HTML (`<header>`, `<main>`, `<section>`, `<form>`, `<label>`, `<ul>`, `<li>`, `<button>`).
-  - Full keyboard accessibility (including `Enter` to save edits, `Escape` to cancel edits, and visible `:focus-visible` outlines).
-  - Mobile, tablet, and desktop responsive layout with touch-friendly targets.
-  - Dedicated empty states for empty lists and zero-match search results with a quick reset button.
+https://focuslist-manushree.vercel.app/
+
+## GitHub Repository
+
+https://github.com/Manushree-S/WebRush
 
 ---
 
-## 🛠️ Tech Stack
+## Features
 
-- **Framework**: React 18
-- **Bundler & Dev Server**: Vite 6
-- **Styling**: Pure Modern CSS (CSS custom properties, CSS Grid, Flexbox, responsive breakpoints)
-- **Persistence**: Browser `localStorage` (`focuslist_tasks`)
-- **Testing**: Vitest & React Testing Library
-- **Dependencies**: Zero backend, zero external database, zero bloated libraries
+- Create tasks with High, Medium, or Low priority
+- Validate empty or whitespace-only task titles
+- Mark tasks as completed or pending
+- Edit task titles and priorities
+- Delete tasks
+- Search tasks in real time
+- Filter tasks by status:
+  - All
+  - Active
+  - Completed
+- Filter tasks by priority:
+  - All Priorities
+  - High
+  - Medium
+  - Low
+- Combine search, status, and priority filters
+- Display live task statistics:
+  - Total Tasks
+  - Pending Tasks
+  - Completed Tasks
+  - Overall Progress
+- Persist task data using browser LocalStorage
+- Responsive design for desktop, tablet, and mobile devices
+- Keyboard-friendly interactions
+- Clear empty-state and no-result messages
+- Accessible form labels, controls, and focus states
 
 ---
 
-## 💾 LocalStorage Implementation
+## Tech Stack
 
-FocusList stores all task records in browser `localStorage` using the key `focuslist_tasks`.
-Each task item conforms to the strict data schema:
-```json
+| Technology | Purpose |
+|------------|---------|
+| React 18 | User interface |
+| Vite 6 | Development server and build tool |
+| JavaScript | Application logic |
+| CSS3 | Styling and responsive design |
+| LocalStorage | Client-side data persistence |
+| Vitest | Testing |
+| React Testing Library | Component testing |
+| Vercel | Deployment |
+
+---
+
+## How It Works
+
+1. Enter a task title.
+2. Select the required priority level.
+3. Click **Add Task**.
+4. Use search or filters to find specific tasks.
+5. Mark tasks as completed when finished.
+6. Edit or delete tasks when required.
+7. Monitor overall progress using the statistics section.
+
+All task updates are reflected immediately in the interface.
+
+---
+
+## Data Persistence
+
+FocusList uses the browser's `localStorage` API to store task information.
+
+The application uses the following LocalStorage key:
+
+```text
+focuslist_tasks
+
+Each task follows a structure similar to:
 {
-  "id": "uuid-or-unique-timestamp",
-  "title": "Clean codebase and write tests",
+  "id": "unique-task-id",
+  "title": "Complete project documentation",
   "priority": "High",
   "completed": false,
   "createdAt": "2026-09-20T05:15:00.000Z"
 }
-```
-Tasks are read on application initialization and safely written whenever any task is added, updated, toggled, or removed.
+Task data is updated whenever a task is:
 
----
+Added
+Edited
+Completed
+Reopened
+Deleted
 
-## 💻 Local Development
+This allows tasks to remain available after refreshing or reopening the browser.
+Responsive Design
 
-### Prerequisites
+FocusList is designed to provide a consistent experience across:
 
-Ensure you have **Node.js** (v18 or newer) and **npm** installed.
+Desktop
+Tablet
+Mobile
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/Manushree-S/WebRush.git
-cd WebRush
-```
+The interface uses responsive layouts and touch-friendly controls to maintain usability across different screen sizes.
 
-### 2. Install dependencies
-```bash
-npm install
-```
+Accessibility
 
-### 3. Run development server
-```bash
-npm run dev
-```
-Open your browser and navigate to `http://localhost:5173`.
+FocusList includes accessibility-focused design practices such as:
 
-### 4. Run test suite
-```bash
-npm test
-```
+Semantic HTML elements
+Associated form labels
+Keyboard-friendly controls
+Visible focus states
+Accessible validation messages
+Text and symbol-based priority indicators
+Clear distinction between completed and pending tasks
+Testing
 
----
+The application's core functionality has been tested, including:
 
-## 📦 Production Build
+Task creation
+Empty task validation
+Task completion
+Task editing
+Task deletion
+Real-time search
+Status filtering
+Priority filtering
+Combined filtering
+Statistics and progress updates
+LocalStorage persistence
+Responsive layouts
 
-To compile a production-ready static build:
+The production build was successfully verified using:
 
-```bash
 npm run build
-```
+Local Development
+Prerequisites
 
-This creates an optimized, minified bundle in the `dist/` directory.
+Make sure the following are installed:
+
+Node.js 18 or later
+npm
+Clone the Repository
+git clone https://github.com/Manushree-S/WebRush.git
+Navigate to the Project
+cd WebRush
+Install Dependencies
+npm install
+Start the Development Server
+npm run dev
+
+The application will normally be available at:
+
+http://localhost:5173
+Run Tests
+
+If the test suite is configured, run:
+
+npm test
+Production Build
+
+To create an optimized production build:
+
+npm run build
+
+The generated files are stored in:
+
+dist/
 
 To preview the production build locally:
 
-```bash
 npm run preview
-```
+Deployment
 
----
+FocusList is a client-side application and can be deployed using static hosting platforms.
 
-## 🌐 Deployment Instructions
+Vercel
 
-FocusList is a pure client-side Single Page Application (SPA) with no backend, making it deployable on any static hosting provider.
+The application is deployed using Vercel.
 
-### Vercel
-1. Install the Vercel CLI: `npm i -g vercel` or connect the GitHub repository `https://github.com/Manushree-S/WebRush.git` on [vercel.com](https://vercel.com).
-2. Framework Preset: **Vite**
-3. Build Command: `npm run build`
-4. Output Directory: `dist`
-5. Click **Deploy**.
+Live Demo:
 
-### Netlify
-1. Connect your repository on [netlify.com](https://netlify.com) or use Netlify CLI.
-2. Build command: `npm run build`
-3. Publish directory: `dist`
-4. Deploy site.
+https://focuslist-manushree.vercel.app/
 
-### GitHub Pages
-1. Set `base: './'` in `vite.config.js` if deploying to a subpath or user page.
-2. Run `npm run build`.
-3. Deploy the `dist` folder to the `gh-pages` branch or configure GitHub Actions.
+Deployment configuration:
 
----
+Framework: Vite
+Build Command: npm run build
+Output Directory: dist
+Project Structure
+WebRush/
+├── public/
+├── src/
+│   ├── components/
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── ...
+├── dist/
+├── index.html
+├── package.json
+├── package-lock.json
+├── vite.config.js
+└── README.md
+Limitations
 
-## 📊 Dataset Notice
+FocusList is currently a frontend-only application.
 
-Per project guidelines, FocusList relies entirely on user input and persistent browser `localStorage`. No external Kaggle dataset, API, or backend is required.
+No backend server
+No external database
+No user authentication
+Task data is stored locally in the user's browser
+Tasks are not synchronized across different devices or browsers
+Future Improvements
 
----
+Possible future enhancements include:
 
-## 📄 License
+User authentication
+Cloud-based task synchronization
+Due dates and reminders
+Task categories and tags
+Drag-and-drop task organization
+Theme customization
+Cloud database integration
+Progressive Web App (PWA) support
+License
+
+This project is available under the MIT License.
+
+Author
+
+Manushree S
+
+GitHub:
+https://github.com/Manushree-S
+
+LinkedIn:
+https://www.linkedin.com/in/manushrees-dev/
+
+## Testing
+
+The application's core functionality was manually tested, including:
+
+- Task creation
+- Empty task validation
+- Task completion
+- Task editing
+- Task deletion
+- Real-time search
+- Status filtering
+- Priority filtering
+- Combined filtering
+- Statistics and progress updates
+- LocalStorage persistence
+- Responsive layouts
+
 
 MIT License &copy; 2026 FocusList Contributors.
